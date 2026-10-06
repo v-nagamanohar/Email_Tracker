@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { font: 13px/1.4 system-ui, sans-serif; margin: 0; width: 360px; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #1a73e8; color: #fff; }
+    header h1 { font-size: 14px; margin: 0; }
+    button { border: 0; background: rgba(255,255,255,.2); color: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+    button:hover { background: rgba(255,255,255,.35); }
+    ul { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow-y: auto; }
+    li { padding: 10px 12px; border-bottom: 1px solid #eee; }
+    .subject { font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .to { color: #555; font-size: 12px; }
+    .status { margin-top: 4px; font-size: 12px; }
+    .opened { color: #188038; font-weight: 600; }
+    .unopened { color: #b3261e; }
+    .empty { padding: 20px; color: #777; text-align: center; }
+    footer { padding: 8px 12px; color: #888; font-size: 11px; border-top: 1px solid #eee; }
+    .settings { display: flex; gap: 6px; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fafafa; }
+    .settings input { flex: 1; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+    .settings button { background: #1a73e8; color: #fff; }
+    #serverMsg { padding: 4px 12px; font-size: 11px; color: #188038; display: none; }
+    #serverMsg.err { color: #b3261e; display: block; }
+    #serverMsg.ok { display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Email Open Tracker</h1>
+    <button id="refresh">Refresh</button>
+  </header>
+  <div class="settings">
+    <input id="serverUrl" type="text" placeholder="Tracker server URL (https://…)" />
+    <button id="saveServer">Save</button>
+  </div>
+  <div id="serverMsg"></div>
+  <ul id="list"><li class="empty">Loading…</li></ul>
+  <footer>Sent emails are tracked via a hidden pixel. Status updates when the receiver loads it.</footer>
+  <script src="popup.js"></script>
+</body>
+</html>
