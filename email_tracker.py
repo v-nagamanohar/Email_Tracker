@@ -18,6 +18,7 @@ Send:  python3 email_tracker.py --send you@recipient.com --server yourdomain.com
 
 import argparse
 import json
+import os
 import secrets
 import smtplib
 import sqlite3
@@ -150,7 +151,8 @@ def send_email(to_addr: str, server: str, smtp_host: str, smtp_port: int, from_a
 
 def main():
     parser = argparse.ArgumentParser(description="Tiny email open tracker")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--port", type=int, default=None,
+                        help="Local port (default: $PORT env var used by Cloud Run/Railway/Fly, else 8000)")
     parser.add_argument("--send", metavar="TO", help="Send a test tracked email instead of running the server")
     parser.add_argument("--server", default="yourdomain.com", help="Public hostname of THIS tracker (used in the pixel URL)")
     parser.add_argument("--smtp-host", default="smtp.gmail.com")
@@ -164,10 +166,13 @@ def main():
         send_email(args.send, args.server, args.smtp_host, args.smtp_port, args.from_addr)
         return
 
-    print(f"Tracking server listening on :{args.port}")
-    print(f"Pixel URL pattern: http://localhost:{args.port}/track/<token>.gif")
-    print(f"Events endpoint:   http://localhost:{args.port}/events")
-    HTTPServer(("0.0.0.0", args.port), TrackerHandler).serve_forever()
+    # PaaS free tiers (Cloud Run, Railway, Fly.io) inject a $PORT env var.
+    port = args.port or int(os.environ.get("PORT", "8000"))
+
+    print(f"Tracking server listening on :{port}")
+    print(f"Pixel URL pattern: http://localhost:{port}/track/<token>.gif")
+    print(f"Events endpoint:   http://localhost:{port}/events")
+    HTTPServer(("0.0.0.0", port), TrackerHandler).serve_forever()
 
 
 if __name__ == "__main__":

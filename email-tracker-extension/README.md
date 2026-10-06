@@ -81,16 +81,26 @@ curl -A "Mozilla/5.0" "http://localhost:8000/open/<token>/t.gif"
 Reopen the popup → the email flips to **Opened ✓**. All hits are logged in
 `events.db` and viewable at `http://localhost:8000/events`.
 
-### Going live for real recipients (production)
+### Going live for real external recipients (100% free)
 `localhost` pixels can't be reached from anyone else's machine, and HTTPS pages
-(Gmail/Outlook) block `http` pixels as mixed content. To track real external emails:
-1. Deploy `email_tracker.py` on a server with a domain + HTTPS (e.g. behind Caddy/nginx or a PaaS like Railway/Fly.io).
-2. Edit `SERVER` at the top of `background.js`:
-   ```js
-   const SERVER = "https://tracker.yourdomain.com";
-   ```
-3. Add that domain to `host_permissions` in `manifest.json`, reload the extension at `chrome://extensions`.
-4. Optionally change the port default with `python3 email_tracker.py --port 8000`.
+(Gmail/Outlook) block `http` pixels as mixed content. You do **not** need to buy
+a domain or server — see **`../DEPLOY-FREE.md`** for step-by-step free options:
+
+- **Google Cloud Run** (recommended): one `gcloud run deploy --source .` command,
+  you get a free `https://….run.app` URL with TLS included.
+- **Railway**: push to GitHub → "Deploy from repo" → generate a free domain.
+- **Fly.io**: `fly launch && fly deploy` → free `https://….fly.dev` URL.
+
+A ready-made `Dockerfile` is in the repo root, and `email_tracker.py` already
+honors the `$PORT` env var these platforms inject — zero code edits needed.
+
+After deploying, point the extension at your new server **without reinstalling**:
+1. Click the toolbar icon.
+2. Paste `https://your-tracker.run.app` into the **Tracker server URL** box → **Save**.
+   (Stored in `chrome.storage.local`; `background.js` reads it on every request.)
+3. The manifest already declares `https://*/*` host permission so the service
+   worker can poll any HTTPS tracker you configure — no manifest edit or reload
+   needed. (For production distribution you'd narrow this to your own domain.)
 
 ### Sending a tracked email from the CLI instead of the browser
 The backend has a built-in sender (useful if you don't want DOM injection):

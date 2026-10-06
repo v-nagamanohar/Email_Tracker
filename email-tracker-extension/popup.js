@@ -38,5 +38,29 @@ async function load() {
   render(resp.tracked);
 }
 
+function showMsg(text, ok) {
+  const el = document.getElementById("serverMsg");
+  el.textContent = text;
+  el.className = ok ? "ok" : "err";
+}
+
+async function loadServerUrl() {
+  const resp = await chrome.runtime.sendMessage({ type: "GET_SERVER" });
+  if (resp && resp.ok) document.getElementById("serverUrl").value = resp.serverUrl;
+}
+
+async function saveServerUrl() {
+  const url = document.getElementById("serverUrl").value.trim();
+  const resp = await chrome.runtime.sendMessage({ type: "SET_SERVER", serverUrl: url });
+  if (resp && resp.ok) {
+    showMsg("Server saved. Statuses re-synced.", true);
+    render(resp.tracked);
+  } else {
+    showMsg((resp && resp.error) || "Failed to save server URL.", false);
+  }
+}
+
 document.getElementById("refresh").addEventListener("click", load);
+document.getElementById("saveServer").addEventListener("click", saveServerUrl);
+loadServerUrl();
 load();

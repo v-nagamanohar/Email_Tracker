@@ -2,8 +2,16 @@
 // Central brain: registers tracked emails, polls the tracker server for open events,
 // and answers status queries from the popup.
 
-const SERVER = "http://localhost:8000"; // local tracker backend (email_tracker.py)
+// Default backend. Override at runtime WITHOUT editing code:
+// open the extension popup, set your deployed HTTPS URL there, and save.
+// (Free deployment guide: see ../DEPLOY-FREE.md)
+const DEFAULT_SERVER = "http://localhost:8000";
 const POLL_INTERVAL_MS = 30 * 1000;     // poll open events every 30s
+
+async function getServer() {
+  const { serverUrl } = await chrome.storage.local.get("serverUrl");
+  return (serverUrl || DEFAULT_SERVER).replace(/\/+$/, "");
+}
 
 // ---------- helpers ----------
 async function getTracked() {
@@ -22,6 +30,7 @@ async function upsertEmail(record) {
 }
 
 async function refreshStatuses() {
+  const SERVER = await getServer();
   const tracked = await getTracked();
   const tokens = Object.keys(tracked);
   if (!tokens.length) return;
@@ -50,6 +59,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     switch (msg.type) {
       // Called by injected page scripts when a compose window sends an email
       case "REGISTER_EMAIL": {
+        const SERVER = await getServer();
         const token = crypto.randomUUID().replace(/-/g, "");
         const pixelUrl = `${SERVER}/open/${token}/t.gif`;
         const record = {
@@ -75,6 +85,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case "REFRESH": {
         await refreshStatuses();
         sendResponse({ ok: true, tracked: await getTracked() });
+        break;
+      }
+
+      // Popup: read / set the backend URL (e.g. your deployed HTTPS server)
+      case "GET_SERVER": {
+        sendResponse({ ok: true, serverUrl: await getServer() });
+        break;
+      }
+
+      case "SET_SERVER": {
+        const url = String(msg.serverUrl || "").trim().replace(/\/+$/, "");
+        if (!/^https?:\/\/.+/.test(url)) {
+          sendResponse({ ok: false, error: "URL must start with http:// or https://" });
+          break;
+        }
+        await chrome.storage.local.set({ serverUrl: url });
+        await refreshStatuses(); // re-sync statuses against the new server
+        sendResponse({ ok: true, serverUrl: url });
         break;
       }
 

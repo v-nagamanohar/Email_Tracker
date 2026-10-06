@@ -10,7 +10,8 @@
     "https://mail.google.com/*",
     "https://outlook.office.com/*",
     "https://outlook.live.com/*",
-    "http://localhost:8000/*"
+    "http://localhost:8000/*",
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background.js"
