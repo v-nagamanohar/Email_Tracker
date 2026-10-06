@@ -53,10 +53,16 @@ def init_db():
 
 
 class TrackerHandler(BaseHTTPRequestHandler):
+    def _cors(self):
+        # Allow the Chrome extension (chrome-extension:// origin) to poll /events.
+        self.send_header("Access-Control-Allow-Origin", "*")
+
     def do_GET(self):
         path = self.path.strip("/")
-        if path.startswith("track/"):
-            token = path[len("track/"):].removesuffix(".gif") or "unknown"
+        if path.startswith("track/") or path.startswith("open/"):
+            # Accept both /track/<token>.gif and /open/<token>/t.gif (extension format)
+            raw = path.split("/", 1)[1]
+            token = raw.split("/")[0].removesuffix(".gif") or "unknown"
             con = sqlite3.connect(DB_PATH)
             con.execute(
                 "INSERT INTO events (token, ts, ip, user_agent) VALUES (?,?,?,?)",
@@ -71,10 +77,28 @@ class TrackerHandler(BaseHTTPRequestHandler):
             con.close()
             print(f"[OPEN] token={token} ip={self.client_address[0]} ua={self.headers.get('User-Agent','')}")
             self.send_response(200)
+            self._cors()
             self.send_header("Content-Type", "image/gif")
+            self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(TRANSPARENT_GIF)))
             self.end_headers()
             self.wfile.write(TRANSPARENT_GIF)
+        elif path.startswith("events/"):
+            # Per-token event list used by the extension popup/background.
+            token = path[len("events/"):]
+            con = sqlite3.connect(DB_PATH)
+            rows = [dict(ts=r[0], ip=r[1], ua=r[2])
+                    for r in con.execute(
+                        "SELECT ts, ip, user_agent FROM events WHERE token=? ORDER BY id", (token,)
+                    )]
+            con.close()
+            body = json.dumps(rows).encode()
+            self.send_response(200)
+            self._cors()
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
         elif path == "events":
             con = sqlite3.connect(DB_PATH)
             rows = [dict(token=r[0], ts=r[1], ip=r[2], ua=r[3])
@@ -82,6 +106,7 @@ class TrackerHandler(BaseHTTPRequestHandler):
             con.close()
             body = json.dumps(rows, indent=2).encode()
             self.send_response(200)
+            self._cors()
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()

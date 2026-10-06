@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Email Open Tracker",
+  "version": "1.0.0",
+  "description": "Tracks whether your sent emails were opened by the receiver (Gmail + Outlook.com). Injects an invisible tracking pixel and shows open status in a popup dashboard.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "https://outlook.office.com/*",
+    "https://outlook.live.com/*",
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Email Open Tracker",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://outlook.office.com/*",
+        "https://outlook.live.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["injected/gmail-inject.js", "injected/outlook-inject.js"],
+      "matches": [
+        "https://mail.google.com/*",
+        "https://outlook.office.com/*",
+        "https://outlook.live.com/*"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
